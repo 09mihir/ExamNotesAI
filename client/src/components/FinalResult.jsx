@@ -1,0 +1,206 @@
+import React, { useState } from 'react'
+import ReactMarkdown from 'react-markdown'
+import MermaidSetup from './MermaidSetup';
+import RechartSetUp from './RechartSetUp';
+import { downloadPdf } from '../services/api';
+
+const markDownComponent = {
+    h1: ({ children }) => (
+        <h1 className="text-2xl font-bold text-indigo-400 mt-6 mb-4 border-b border-white/10 pb-2">
+            {children}
+        </h1>
+    ),
+    h2: ({ children }) => (
+        <h2 className="text-xl font-semibold text-indigo-300 mt-5 mb-3">
+            {children}
+        </h2>
+    ),
+    h3: ({ children }) => (
+        <h3 className="text-lg font-semibold text-gray-200 mt-4 mb-2">
+            {children}
+        </h3>
+    ),
+    p: ({ children }) => (
+        <p className="text-gray-300 leading-relaxed mb-3">
+            {children}
+        </p>
+    ),
+    ul: ({ children }) => (
+        <ul className="list-disc ml-6 space-y-1 text-gray-300">
+            {children}
+        </ul>
+    ),
+    li: ({ children }) => (
+        <li className="marker:text-indigo-400">{children}</li>
+    ),
+}
+
+function FinalResult({ result }) {
+    const [quickRevision, setQuickRevision] = useState(false);
+    if (
+        !result ||
+        !result.subTopics ||
+        !result.questions ||
+        !result.questions.short ||
+        !result.questions.long ||
+        !result.revisionPoints
+    ) {
+        return null;
+    }
+
+    return (
+        <div className='mt-6 p-3 space-y-10 text-white'>
+
+            <div className='flex flex-col md:flex-row md:items-center md:justify-between gap-4'>
+
+                <h2 className='text-3xl font-bold
+          bg-gradient-to-r from-indigo-400 to-purple-400
+          bg-clip-text text-transparent'>
+                    📘 Generated Notes
+                </h2>
+
+                <div className='flex gap-3'>
+                    <button onClick={() => setQuickRevision(!quickRevision)} className={`
+              px-4 py-2 rounded-lg text-sm font-medium transition
+              ${quickRevision
+                            ? "bg-green-500/20 text-green-300 border border-green-500/30"
+                            : "bg-white/10 text-white hover:bg-white/20 border border-white/10"}
+            `}>  {quickRevision ? "Exit Revision Mode" : "Quick Revision (5 min)"}</button>
+                    <button onClick={()=>downloadPdf(result)}
+                    className='px-4 py-2 rounded-lg text-sm font-medium bg-indigo-600 text-white hover:bg-indigo-500 transition shadow-[0_0_15px_rgba(79,70,229,0.3)]'>
+                        ⬇️ Download PDF
+                    </button>
+                </div>
+            </div>
+
+
+            {!quickRevision && <section>
+
+                <SectionHeader icon="⭐" title="Sub Topics" color="indigo" />
+                {
+                    Object.entries(result.subTopics).map(([star, topics]) => (
+                        <div key={star} className='mb-3'>
+
+                            <p className='font-medium text-indigo-400 mb-1'>
+                                {star} Priority
+                            </p>
+                            <ul className='list-disc ml-6 text-gray-300'>
+                                {topics.map((t, i) => (
+                                    <li key={i}>{t}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    ))
+                }
+            </section>}
+
+
+            {!quickRevision && <section>
+                <SectionHeader icon="📝" title="Detailed Notes" color="purple" />
+                <div className='bg-white/5 border border-white/10 rounded-xl p-6'>
+                    <ReactMarkdown components={markDownComponent}>
+                        {result.notes}
+                    </ReactMarkdown>
+                </div>
+            </section>}
+
+
+            {quickRevision &&
+                <section className='rounded-xl bg-green-500/10 border border-green-500/20 p-6'>
+                    <h3 className='font-bold text-green-400 mb-3 text-lg'>
+                        ⚡ Exam Quick Revision Points
+                    </h3>
+                    <ul className='list-disc ml-6 space-y-1 text-gray-200'>
+                        {result.revisionPoints.map((p, i) => (
+                            <li key={i}>{p}</li>
+                        ))}
+                    </ul>
+                </section>}
+
+
+            {result.diagram?.data && <section>
+                <SectionHeader icon="📊" title="Diagram" color="cyan" />
+
+                <div className="bg-white/5 border border-white/10 p-4 rounded-xl overflow-x-auto">
+                   <MermaidSetup diagram={result.diagram?.data} />
+                </div>
+                <p className="mt-3 text-xs text-gray-500 italic">
+                    ℹ️ If you need this diagram for future reference or revision,
+                    you can save it by taking a screenshot.
+                </p>
+
+            </section>}
+
+
+            {result.charts?.length > 0 &&
+                <section>
+                    <SectionHeader icon="📈" title="Visual Charts" color="indigo" />
+                    <div className="bg-white/5 border border-white/10 p-4 rounded-xl">
+                      <RechartSetUp charts={result.charts} />
+                    </div>
+                    <p className="mt-3 text-xs text-gray-500 italic">
+                        ℹ️ If you need this Chart for future reference or revision,
+                        you can save it by taking a screenshot.
+                    </p>
+
+                </section>}
+
+            {result.charts && result.charts.length === 0 && (
+                <p className="text-sm text-gray-500 italic">
+                    📉 Charts are not relevant for this topic.
+                </p>
+            )}
+
+
+            <section>
+                <SectionHeader icon="❓" title="Important Questions" color="rose" />
+
+                <p className='font-medium text-gray-200'>Short Questions:</p>
+                <ul className='list-disc ml-6 text-gray-400'>
+                    {result.questions.short.map((q, i) => (
+                        <li key={i}>{q}</li>
+                    ))}
+                </ul>
+
+
+                <p className='font-medium mt-4 text-gray-200'>Long Questions:</p>
+                <ul className='list-disc ml-6 text-gray-400'>
+                    {result.questions.long.map((q, i) => (
+                        <li key={i}>{q}</li>
+                    ))}
+                </ul>
+                <p className='font-medium mt-4 text-gray-200'>Diagram Question:</p>
+                <ul className='list-disc ml-6 text-gray-400'>
+                    <li>{result.questions.diagram}</li>
+                </ul>
+
+            </section>
+
+        </div>
+    )
+}
+
+
+function SectionHeader({ icon, title, color }) {
+    const colors = {
+        indigo: "from-indigo-500/20 to-indigo-500/5 text-indigo-300 border-indigo-500/20",
+        purple: "from-purple-500/20 to-purple-500/5 text-purple-300 border-purple-500/20",
+        blue: "from-blue-500/20 to-blue-500/5 text-blue-300 border-blue-500/20",
+        green: "from-green-500/20 to-green-500/5 text-green-300 border-green-500/20",
+        cyan: "from-cyan-500/20 to-cyan-500/5 text-cyan-300 border-cyan-500/20",
+        rose: "from-rose-500/20 to-rose-500/5 text-rose-300 border-rose-500/20",
+    };
+    return (
+        <div className={`
+        mb-4 px-4 py-2 rounded-lg border
+        bg-gradient-to-r ${colors[color]}
+        font-semibold flex items-center gap-2
+      `}>
+            <span>{icon}</span>
+            <span>{title}</span>
+        </div>
+
+    )
+}
+
+export default FinalResult
