@@ -6,7 +6,7 @@ import { getCurrentUser } from './services/api'
 import { useDispatch, useSelector } from 'react-redux'
 import History from './pages/History'
 import Notes from './pages/Notes'
-export const serverUrl = "http://localhost:8000"
+export const serverUrl = import.meta.env.PROD ? "" : "http://localhost:8000"
 
 function App() {
   const dispatch = useDispatch()

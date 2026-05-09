@@ -39,7 +39,12 @@ app.use("/api/pdf", pdfRouter)
 
 
 
-app.listen(PORT,()=>{
-    console.log(`✅ Server running on port ${PORT}`)
-    connectDb()
-})
+connectDb();
+
+if (process.env.NODE_ENV !== "production") {
+    app.listen(PORT,()=>{
+        console.log(`✅ Server running on port ${PORT}`)
+    })
+}
+
+export default app;
